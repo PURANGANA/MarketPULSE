@@ -1,0 +1,856 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MarketPulse</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Segoe UI,Arial,sans-serif;}
+body{background:#0e1320;color:#e5e7eb;}
+.navbar{height:64px;position:fixed;top:0;width:100%;background:#0b1220;display:flex;justify-content:space-between;align-items:center;padding:0 42px;z-index:100;}
+.nav-logo{font-size:22px;font-weight:700;}
+.nav-logo span{color:#22c55e;}
+.nav-links{list-style:none;display:flex;gap:30px;}
+.nav-links a{color:#cbd5f5;text-decoration:none;cursor:pointer;font-weight:500;padding-bottom:4px;border-bottom:2px solid transparent;}
+.nav-links a:hover{color:#22c55e;}
+.nav-links a.nav-active{color:#22c55e;font-weight:700;border-bottom:2px solid #22c55e;}
+.signup-btn{background:#22c55e;border:none;padding:10px 18px;border-radius:20px;font-weight:600;cursor:pointer;color:#052e16;}
+.user-name{color:#22c55e;font-weight:600;}
+.news-ticker{width:100%;background:#111827;overflow:hidden;white-space:nowrap;padding:10px 0;position:fixed;top:64px;left:0;z-index:99;border-top:1px solid #1f2937;border-bottom:1px solid #1f2937;}
+.ticker-content{display:inline-block;padding-left:100%;animation:scrollNews 40s linear infinite;color:#22c55e;font-weight:600;}
+@keyframes scrollNews{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+.section{display:none;padding:170px 80px;min-height:100vh;}
+.section.active{display:block;}
+.hero{background:linear-gradient(rgba(2,6,23,.8),rgba(2,6,23,.8)),url("https://images.unsplash.com/photo-1569025690938-a00729c9e1f9")center/cover no-repeat;}
+.main{display:flex;justify-content:space-between;gap:60px;flex-wrap:wrap;}
+.branding h1{font-size:54px;}
+.branding span{color:#22c55e;}
+.branding p{margin-top:12px;font-size:18px;color:#cbd5f5;}
+.market-status{margin-top:20px;display:inline-block;padding:10px 18px;border-radius:20px;font-weight:700;background:#16a34a;color:white;letter-spacing:.5px;}
+.prediction-box{background:#ffffff;color:#0f172a;width:460px;max-width:100%;padding:30px;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.35);}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e5e7eb;}
+.bull{color:#16a34a;font-weight:600;}
+.bear{color:#dc2626;font-weight:600;}
+.neutral{color:#64748b;font-weight:600;}
+.search-box{position:relative;margin-bottom:10px;}
+.search-box input{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;font-size:14px;}
+.dropdown{position:absolute;top:46px;width:100%;background:white;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,.15);max-height:160px;overflow-y:auto;display:none;z-index:10;}
+.dropdown div{padding:10px 14px;cursor:pointer;}
+.dropdown div:hover{background:#f1f5f9;}
+.action-btn{margin-top:14px;width:100%;padding:12px;background:#22c55e;border:none;border-radius:12px;font-weight:700;cursor:pointer;color:#052e16;}
+.dashboard{background:linear-gradient(180deg,#eef2ff,#e0e7ff);color:#0f172a;}
+.dashboard-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;}
+.card{position:relative;background:white;border-radius:18px;padding:24px;box-shadow:0 15px 35px rgba(0,0,0,.15);}
+.pie-popup{position:absolute;top:20px;right:20px;background:white;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 15px 35px rgba(0,0,0,.22);padding:16px;width:230px;z-index:20;}
+.pie-popup-header{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:10px;font-size:14px;}
+.pie-popup-header button{background:none;border:none;font-size:18px;cursor:pointer;color:#64748b;line-height:1;}
+.pie-popup-row{padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+.pie-popup-row:last-child{border-bottom:none;}
+.pie-hint{font-size:12px;color:#94a3b8;margin-top:10px;}
+.stock-row{padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:14px;}
+.buy{color:#16a34a;font-weight:600;}
+.sell{color:#dc2626;font-weight:600;}
+.watch{color:#64748b;font-weight:600;}
+.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.75);justify-content:center;align-items:center;z-index:200;}
+.auth-box{background:white;width:380px;max-width:90vw;padding:36px;border-radius:22px;box-shadow:0 30px 70px rgba(0,0,0,.4);color:#0f172a;}
+.auth-box input{width:100%;padding:12px;border-radius:12px;border:1px solid #cbd5e1;margin-bottom:14px;font-size:14px;}
+.auth-title{
+  text-align:center;
+  margin-bottom:22px;
+  font-size:24px;
+  font-weight:800;
+  background:linear-gradient(90deg,#16a34a,#22c55e,#0ea5e9);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.auth-tabs{display:flex;border-radius:12px;background:#f1f5f9;padding:4px;margin-bottom:20px;}
+.tab-btn{flex:1;padding:10px;border:none;background:transparent;border-radius:10px;font-weight:600;cursor:pointer;color:#64748b;}
+.tab-btn.active{background:white;color:#0f172a;box-shadow:0 2px 6px rgba(0,0,0,.12);}
+.auth-form{margin-bottom:6px;}
+.field-error{color:#dc2626;font-size:12px;margin-top:-10px;margin-bottom:10px;display:none;}
+.auth-divider{text-align:center;color:#94a3b8;font-size:13px;margin:18px 0 14px;position:relative;}
+.auth-divider::before,.auth-divider::after{content:"";position:absolute;top:50%;width:38%;height:1px;background:#e2e8f0;}
+.auth-divider::before{left:0;}
+.auth-divider::after{right:0;}
+.google-btn-wrap{display:flex;justify-content:center;margin-bottom:12px;min-height:44px;}
+.phone-btn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;background:#22c55e;color:#052e16;border:none;}
+.small-link{background:none;border:none;color:#0ea5e9;font-weight:600;cursor:pointer;font-size:13px;padding:0;}
+#toast{position:fixed;bottom:30px;right:30px;padding:12px 18px;border-radius:12px;font-weight:600;color:white;background:#020617;box-shadow:0 20px 40px rgba(0,0,0,.3);opacity:0;transform:translateY(20px);transition:.3s;}
+#toast.show{opacity:1;transform:translateY(0);}
+.footer{background:#020617;padding:30px;text-align:center;color:#94a3b8;font-size:14px;}
+.info-section{background:linear-gradient(180deg,#111827,#0f172a);}
+#news.info-section{
+  background:
+    linear-gradient(rgba(15,23,42,.93),rgba(15,23,42,.96)),
+    url("https://images.unsplash.com/photo-1569025690938-a00729c9e1f9")
+    center/cover no-repeat fixed;
+}
+.section-title{font-size:42px;margin-bottom:15px;color:#22c55e;}
+.section-subtitle{color:#cbd5f5;margin-bottom:40px;font-size:18px;max-width:760px;line-height:1.6;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:25px;margin-top:25px;}
+.feature-card{background:#1e293b;padding:28px;border-radius:18px;border:1px solid #334155;transition:.3s;}
+.feature-card:hover{transform:translateY(-5px);border-color:#22c55e;}
+.feature-card h3{color:#22c55e;margin-bottom:12px;font-size:17px;}
+.feature-card p{color:#cbd5f5;line-height:1.6;font-size:14px;}
+#toast.add{background:#16a34a;}
+#toast.remove{background:#dc2626;}
+.loading-price{color:#64748b;font-style:italic;}
+.data-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:8px;background:#334155;color:#94a3b8;margin-left:8px;vertical-align:middle;}
+.key-warning{background:#7c2d12;color:#fed7aa;padding:10px 20px;text-align:center;font-size:13px;font-weight:600;position:fixed;top:104px;left:0;width:100%;z-index:98;display:none;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo">Market<span>PULSE</span></div>
+  <ul class="nav-links" id="navLinks">
+    <li><a data-section="home" class="nav-active" onclick="showSection('home')">Home</a></li>
+    <li><a data-section="about" onclick="showSection('about')">About</a></li>
+    <li><a data-section="services" onclick="showSection('services')">Services</a></li>
+    <li><a data-section="news" onclick="showSection('news')">News</a></li>
+  </ul>
+  <div id="navRight">
+    <button class="signup-btn" onclick="openAuth('signup')">Sign Up</button>
+  </div>
+</nav>
+
+<div class="news-ticker">
+  <div id="newsTickerContent" class="ticker-content">Loading latest market news...</div>
+</div>
+
+<div id="keyWarning" class="key-warning">
+  ⚠ No Finnhub API key set — add your free key in the script (FINNHUB_API_KEY) to see real prices. Showing simulated data.
+</div>
+
+<section id="home" class="section hero active">
+  <div class="main">
+    <div class="branding">
+      <h1>Market<span>PULSE</span></h1>
+      <p>Search stocks and see tomorrow's predicted move, powered by live market data.</p>
+      <div id="marketStatus" class="market-status">Checking market status...</div>
+    </div>
+    <div class="prediction-box">
+      <div class="search-box">
+        <input id="searchInput" placeholder="Search stock (e.g. AAPL)" oninput="filterStocks()">
+        <div id="dropdown" class="dropdown"></div>
+      </div>
+      <p><b id="stockName">—</b></p>
+      <div class="row"><span>Current Price</span><span id="cur">—</span></div>
+      <div class="row"><span>Predicted Price</span><span id="pred">—</span></div>
+      <div class="row"><span>Direction</span><span id="dir">—</span></div>
+      <div class="row"><span>Last Updated</span><span id="lastUpdated">—</span></div>
+      <button id="favBtn" class="action-btn" onclick="addFavorite()" style="display:none">Add to Favorites</button>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="section info-section">
+  <h1 class="section-title">About MarketPulse</h1>
+  <p class="section-subtitle">
+    MarketPulse is a market intelligence platform that brings together live pricing,
+    predictive analytics, and portfolio tracking in a single, focused dashboard.
+    It is built to make market data easier to read and act on.
+  </p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h3>Market Analytics</h3>
+      <p>Live price feeds combined with a forecasting layer that estimates likely near-term price movement for each stock you follow.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Fast &amp; Responsive</h3>
+      <p>Built with HTML, CSS, JavaScript, and Chart.js, with a responsive interface designed to work well on both desktop and mobile.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Built Around You</h3>
+      <p>Personal watchlists and a favorites-based dashboard let you track only the stocks that matter to your portfolio.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Academic Foundation</h3>
+      <p>Developed as a final-year software engineering project, demonstrating applied web development, API integration, and forecasting concepts.</p>
+    </div>
+  </div>
+</section>
+
+<section id="services" class="section info-section">
+  <h1 class="section-title">Our Services</h1>
+  <p class="section-subtitle">
+    A focused set of tools designed to simplify how you research stocks and track your portfolio.
+  </p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h3>Live Stock Search</h3>
+      <p>Look up major listed stocks and view their current market price alongside a next-day price forecast.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Market News Feed</h3>
+      <p>A continuously updating feed of financial headlines and market-moving developments, sourced live from the market.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Portfolio Watchlist</h3>
+      <p>Save stocks to a personal favorites list for quick, ongoing monitoring from your dashboard.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Predictive Insights</h3>
+      <p>Directional forecasts, labeled as bullish, bearish, or neutral, to support faster decision-making.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Visual Dashboard</h3>
+      <p>An at-a-glance chart summarizing how your watchlist is trending across rising, falling, and neutral positions.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Live Market Status</h3>
+      <p>Real-time indication of whether the market is currently open or closed, based on official trading hours.</p>
+    </div>
+  </div>
+</section>
+
+<section id="news" class="section info-section">
+  <h1 class="section-title">Market News</h1>
+  <p class="section-subtitle">
+    Live financial headlines, refreshed automatically. If live data is temporarily unavailable, a recent cached summary is shown instead.
+  </p>
+  <div id="newsListSection" class="feature-grid">
+    <p>Loading latest headlines...</p>
+  </div>
+</section>
+
+<section id="dashboard" class="section dashboard">
+  <div class="dashboard-grid">
+    <div class="card">
+      <h3>My Favorite Stocks</h3>
+      <div id="favList"></div>
+    </div>
+    <div class="card">
+      <h3>Prediction Overview</h3>
+      <canvas id="pie"></canvas>
+      <p class="pie-hint">Click a slice to see which stocks are in that group.</p>
+      <div id="pieGroupPopup" class="pie-popup" style="display:none;">
+        <div class="pie-popup-header">
+          <span id="pieGroupTitle"></span>
+          <button onclick="closePiePopup()" aria-label="Close">×</button>
+        </div>
+        <div id="pieGroupList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="authModal" class="modal">
+  <div class="auth-box">
+    <h2 class="auth-title" id="authTitle">Welcome to MarketPulse</h2>
+
+    <div class="auth-tabs">
+      <button id="tabSignup" class="tab-btn active" onclick="switchAuthTab('signup')">Sign Up</button>
+      <button id="tabLogin" class="tab-btn" onclick="switchAuthTab('login')">Log In</button>
+    </div>
+
+    <div id="signupForm" class="auth-form">
+      <input id="suUsername" placeholder="Username">
+      <input id="suPassword" type="password" placeholder="Password">
+      <div id="suError" class="field-error"></div>
+      <button class="signup-btn" style="width:100%" onclick="signup()">Create Account</button>
+    </div>
+
+    <div id="loginForm" class="auth-form" style="display:none;">
+      <input id="liUsername" placeholder="Username">
+      <input id="liPassword" type="password" placeholder="Password">
+      <div id="liError" class="field-error"></div>
+      <button class="signup-btn" style="width:100%" onclick="login()">Log In</button>
+    </div>
+
+    <div class="auth-divider">or continue with</div>
+
+    <div id="googleBtnContainer" class="google-btn-wrap"></div>
+
+    <button class="phone-btn" onclick="showPhoneLogin()">Continue with Mobile Number</button>
+
+    <div id="phoneLogin" style="display:none;margin-top:8px;">
+      <div id="phoneStep1">
+        <input id="phoneNumber" placeholder="Enter mobile number">
+        <button class="signup-btn" style="width:100%" onclick="sendOTP()">Send OTP</button>
+      </div>
+      <div id="phoneStep2" style="display:none;">
+        <p style="font-size:13px;color:#64748b;margin-bottom:10px;">OTP sent to <span id="phoneDisplay"></span> · <button class="small-link" onclick="editPhoneNumber()">Change number</button></p>
+        <input id="otp" placeholder="Enter OTP">
+        <button class="signup-btn" style="width:100%" onclick="verifyOTP()">Verify OTP</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer class="footer">
+  <p>© 2026 MarketPulse</p>
+  <p>Final Year Project | Developed by Ankit Lahiri</p>
+</footer>
+
+<script>
+/* =========================================================
+   CONFIG / STATIC DATA
+   ========================================================= */
+const FINNHUB_API_KEY = "d95chbpr01qihq3l4o90d95chbpr01qihq3l4o9g";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const BACKEND_URL = "http://127.0.0.1:5000";
+
+const COMPANY_NAMES = {
+  "AAPL":"Apple Inc.","MSFT":"Microsoft Corporation","GOOGL":"Alphabet Inc.",
+  "AMZN":"Amazon.com Inc.","META":"Meta Platforms Inc.","TSLA":"Tesla Inc.",
+  "NVDA":"NVIDIA Corporation","IBM":"IBM Corporation","NFLX":"Netflix Inc.",
+  "AMD":"Advanced Micro Devices Inc.","INTC":"Intel Corporation","ORCL":"Oracle Corporation",
+  "CRM":"Salesforce Inc.","ADBE":"Adobe Inc.","PYPL":"PayPal Holdings Inc.","UBER":"Uber Technologies Inc.",
+  "DIS":"The Walt Disney Company","JPM":"JPMorgan Chase & Co.","V":"Visa Inc.",
+  "MA":"Mastercard Inc.","WMT":"Walmart Inc.","KO":"The Coca-Cola Company",
+  "PEP":"PepsiCo Inc.","NKE":"Nike Inc.","BA":"The Boeing Company",
+  "XOM":"Exxon Mobil Corporation","SBUX":"Starbucks Corporation",
+  "BABA":"Alibaba Group Holding Ltd.","TSM":"Taiwan Semiconductor Mfg. Co.",
+  "SONY":"Sony Group Corporation","TM":"Toyota Motor Corporation",
+  "INFY":"Infosys Ltd.","WIT":"Wipro Ltd.","IBN":"ICICI Bank Ltd.",
+  "HDB":"HDFC Bank Ltd.","TTM":"Tata Motors Ltd.",
+  "RELIANCE.NS":"Reliance Industries Ltd.","TCS.NS":"Tata Consultancy Services Ltd.",
+  "HDFCBANK.NS":"HDFC Bank Ltd.","ICICIBANK.NS":"ICICI Bank Ltd.",
+  "SBIN.NS":"State Bank of India","INFY.NS":"Infosys Ltd."
+};
+const STOCKS = Object.keys(COMPANY_NAMES);
+const BASE_PRICES = {
+  "AAPL":213,"MSFT":430,"GOOGL":178,"AMZN":192,"META":510,"TSLA":248,"NVDA":135,"IBM":185,
+  "NFLX":680,"AMD":155,"INTC":32,"ORCL":145,"CRM":265,"ADBE":480,"PYPL":72,"UBER":78,
+  "DIS":112,"JPM":210,"V":275,"MA":470,"WMT":90,"KO":68,"PEP":165,"NKE":78,"BA":190,
+  "XOM":118,"SBUX":95,
+  "BABA":85,"TSM":175,"SONY":90,"TM":195,
+  "INFY":20,"WIT":6,"IBN":30,"HDB":65,"TTM":30,
+  "RELIANCE.NS":2950,"TCS.NS":3850,"HDFCBANK.NS":1650,"ICICIBANK.NS":1150,"SBIN.NS":830,"INFY.NS":1550
+};
+const NEWS_TEMPLATES = [
+  "AAPL hits new 52-week high amid strong iPhone demand",
+  "NVDA reports record revenue driven by AI chip sales",
+  "MSFT Azure cloud revenue grows sharply in latest earnings",
+  "TSLA deliveries beat analyst expectations for the quarter",
+  "META advertising revenue rises as Reels engagement grows",
+  "AMZN AWS captures larger enterprise cloud market share",
+  "IBM secures new enterprise AI consulting contracts",
+  "GOOGL expands Gemini integration across Workspace",
+  "Federal Reserve holds interest rates steady",
+  "S&P 500 closes at a record high on strong jobs data",
+  "Nasdaq gains as the technology sector leads the market",
+  "Oil prices steady as OPEC+ maintains production levels"
+];
+
+let selected = null;
+let favorites = JSON.parse(localStorage.getItem("fav") || "[]");
+let chart = null;
+let isLoggedIn = false;
+let latestNews = [];
+let generatedOTP = null;
+
+function hasApiKey() {
+  return FINNHUB_API_KEY && FINNHUB_API_KEY !== "YOUR_FINNHUB_API_KEY_HERE";
+}
+
+async function fetchMarketNews() {
+  if (!hasApiKey()) {
+    document.getElementById("keyWarning").style.display = "block";
+    latestNews = NEWS_TEMPLATES.map(t => ({ title: t, link: "#", pubDate: "", live: false }));
+    renderTicker();
+    renderNewsSection();
+    return;
+  }
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_API_KEY}`);
+    if (!res.ok) throw new Error("Finnhub news request failed: " + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) throw new Error("No news items returned");
+    latestNews = data.slice(0, 15).map(n => ({
+      title: n.headline || "Untitled",
+      link: n.url || "#",
+      pubDate: n.datetime ? new Date(n.datetime * 1000).toISOString() : "",
+      live: true
+    }));
+  } catch (err) {
+    console.warn("Live news feed unavailable, using cached headlines:", err);
+    latestNews = NEWS_TEMPLATES.map(t => ({ title: t, link: "#", pubDate: "", live: false }));
+  }
+  renderTicker();
+  renderNewsSection();
+}
+
+function renderTicker() {
+  const content = latestNews.map(n => n.title).join("     •     ");
+  document.getElementById("newsTickerContent").innerText = content || "Market news is temporarily unavailable.";
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderNewsSection() {
+  const container = document.getElementById("newsListSection");
+  if (!latestNews.length) {
+    container.innerHTML = "<p>No news available right now.</p>";
+    return;
+  }
+  container.innerHTML = latestNews.map(n => `
+    <div class="feature-card">
+      <h3>${escapeHtml(n.title)}${!n.live ? '<span class="data-tag">cached</span>' : ""}</h3>
+      ${n.pubDate ? `<p style="color:#94a3b8;font-size:13px;margin-bottom:6px;">${new Date(n.pubDate).toLocaleString()}</p>` : ""}
+      ${n.link && n.link !== "#" ? `<a href="${n.link}" target="_blank" rel="noopener" style="color:#22c55e;font-size:13px;">Read more →</a>` : ""}
+    </div>`).join("");
+}
+
+/* =========================================================
+   LIVE STOCK QUOTES — Connected to Flask LSTM Prediction Engine
+   ========================================================= */
+async function fetchQuote(symbol) {
+  let currency = symbol.endsWith(".NS") ? "₹" : "$";
+  let spotPrice = BASE_PRICES[symbol] || 100.00;
+
+  // 1. Fetch real-time price from Finnhub API if valid key is set
+  if (hasApiKey()) {
+    try {
+      const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.c) {
+          spotPrice = data.c;
+        }
+      }
+    } catch (err) {
+      console.warn("Finnhub live call issue, defaulting to repository price.");
+    }
+  }
+
+  // 2. Fetch predicted valuation metrics from Python Flask server
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/predict`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol: symbol })
+    });
+    const modelData = await res.json();
+
+    if (modelData && !modelData.error) {
+      return {
+        cur: spotPrice,
+        pred: modelData.predicted_price,
+        currency: currency,
+        live: true,
+        direction: modelData.direction
+      };
+    }
+  } catch (err) {
+    console.error("Flask prediction server link timed out or unreachable:", err);
+  }
+
+  // Pure frontend simulation fallback if Python server is not turned on
+  const variance = (Math.random() - 0.5) * spotPrice * 0.03;
+  const simulatedPred = spotPrice + variance;
+  return {
+    cur: spotPrice,
+    pred: simulatedPred,
+    currency: currency,
+    live: false,
+    direction: simulatedPred > spotPrice ? "UP" : "DOWN"
+  };
+}
+
+async function fetchLivePrice(symbol) {
+  document.getElementById("cur").innerHTML = '<span class="loading-price">Fetching...</span>';
+  document.getElementById("pred").innerHTML = '<span class="loading-price">Training LSTM...</span>';
+  document.getElementById("lastUpdated").innerHTML = '<span class="loading-price">...</span>';
+
+  const q = await fetchQuote(symbol);
+
+  document.getElementById("cur").innerText = q.currency + q.cur.toFixed(2);
+  document.getElementById("pred").innerText = q.currency + q.pred.toFixed(2);
+  document.getElementById("lastUpdated").innerText = new Date().toLocaleString() + (q.live ? " (LSTM Active)" : " (simulated)");
+
+  const dirEl = document.getElementById("dir");
+  if (q.direction === "UP") { 
+    dirEl.innerHTML = "▲ Bullish"; 
+    dirEl.className = "bull"; 
+  } else { 
+    dirEl.innerHTML = "▼ Bearish"; 
+    dirEl.className = "bear"; 
+  }
+}
+
+function updateMarketStatus() {
+  const now = new Date();
+  const nyParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour12: false,
+    weekday: "short", hour: "2-digit", minute: "2-digit"
+  }).formatToParts(now);
+
+  const get = type => nyParts.find(p => p.type === type)?.value;
+  const weekday = get("weekday");
+  const hour = parseInt(get("hour"), 10);
+  const minute = parseInt(get("minute"), 10);
+  const minutesNow = hour * 60 + minute;
+
+  const isWeekday = !["Sat", "Sun"].includes(weekday);
+  const marketOpenMin = 9 * 60 + 30;
+  const marketCloseMin = 16 * 60;
+  const isOpen = isWeekday && minutesNow >= marketOpenMin && minutesNow < marketCloseMin;
+
+  const el = document.getElementById("marketStatus");
+  if (isOpen) {
+    el.innerText = "Market Open (NYSE / NASDAQ)";
+    el.style.background = "#16a34a";
+  } else {
+    el.innerText = "Market Closed (NYSE / NASDAQ)";
+    el.style.background = "#dc2626";
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+
+  document.querySelectorAll(".nav-links a").forEach(a => a.classList.remove("nav-active"));
+  const activeLink = document.querySelector(`.nav-links a[data-section="${id}"]`);
+  if (activeLink) activeLink.classList.add("nav-active");
+}
+
+function openAuth(defaultTab) {
+  document.getElementById("authModal").style.display = "flex";
+  switchAuthTab(defaultTab || "signup");
+}
+
+function switchAuthTab(tab) {
+  const isSignup = tab === "signup";
+  document.getElementById("tabSignup").classList.toggle("active", isSignup);
+  document.getElementById("tabLogin").classList.toggle("active", !isSignup);
+  document.getElementById("signupForm").style.display = isSignup ? "block" : "none";
+  document.getElementById("loginForm").style.display = isSignup ? "none" : "block";
+  document.getElementById("suError").style.display = "none";
+  document.getElementById("liError").style.display = "none";
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  el.innerText = msg;
+  el.style.display = "block";
+}
+
+function getUsers() {
+  return JSON.parse(localStorage.getItem("mp_users") || "{}");
+}
+function saveUsers(users) {
+  localStorage.setItem("mp_users", JSON.stringify(users));
+}
+
+function signup() {
+  const username = document.getElementById("suUsername").value.trim();
+  const password = document.getElementById("suPassword").value.trim();
+  if (!username || !password) { showFieldError("suError", "Please fill in both fields."); return; }
+
+  const users = getUsers();
+  if (users[username]) {
+    showFieldError("suError", "That username is already taken. Try logging in instead.");
+    return;
+  }
+  users[username] = password;
+  saveUsers(users);
+  showToast("Account created — please log in", "add");
+  document.getElementById("suUsername").value = "";
+  document.getElementById("suPassword").value = "";
+  switchAuthTab("login");
+}
+
+function login() {
+  const username = document.getElementById("liUsername").value.trim();
+  const password = document.getElementById("liPassword").value.trim();
+  const users = getUsers();
+  if (!username || !password) { showFieldError("liError", "Please fill in both fields."); return; }
+  if (!users[username] || users[username] !== password) {
+    showFieldError("liError", "Incorrect username or password.");
+    return;
+  }
+  completeLogin(username);
+}
+
+function initGoogleSignIn() {
+  const container = document.getElementById("googleBtnContainer");
+  const configured = GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith("YOUR_");
+
+  if (!configured) {
+    container.innerHTML = '<p style="font-size:12px;color:#94a3b8;text-align:center;">Set GOOGLE_CLIENT_ID in the script to enable Google Sign-In.</p>';
+    return;
+  }
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    setTimeout(initGoogleSignIn, 300);
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false
+  });
+
+  container.innerHTML = "";
+  google.accounts.id.renderButton(container, {
+    theme: "outline",
+    size: "large",
+    width: 300,
+    text: "continue_with",
+    shape: "pill"
+  });
+}
+
+function decodeJwtPayload(token) {
+  const payload = token.split(".")[1];
+  const decoded = decodeURIComponent(
+    atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+      .split("")
+      .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+  return JSON.parse(decoded);
+}
+
+function handleGoogleCredential(response) {
+  try {
+    const payload = decodeJwtPayload(response.credential);
+    if (!payload.email_verified) {
+      showToast("That Google account's email isn't verified.", "remove");
+      return;
+    }
+    completeLogin(payload.name || payload.email);
+  } catch (e) {
+    console.error("Google credential decode failed:", e);
+    showToast("Google sign-in failed. Please try again.", "remove");
+  }
+}
+
+function showPhoneLogin() {
+  document.getElementById("phoneLogin").style.display = "block";
+  document.getElementById("phoneStep1").style.display = "block";
+  document.getElementById("phoneStep2").style.display = "none";
+}
+
+function sendOTP() {
+  const phone = document.getElementById("phoneNumber").value.trim();
+  if (phone.length < 10) { showToast("Enter a valid mobile number", "remove"); return; }
+
+  generatedOTP = String(Math.floor(1000 + Math.random() * 9000));
+  console.log("Simulated OTP (dev only):", generatedOTP);
+
+  document.getElementById("phoneDisplay").innerText = phone;
+  document.getElementById("phoneStep1").style.display = "none";
+  document.getElementById("phoneStep2").style.display = "block";
+  showToast("OTP sent to " + phone, "add");
+}
+
+function editPhoneNumber() {
+  document.getElementById("phoneStep2").style.display = "none";
+  document.getElementById("phoneStep1").style.display = "block";
+  document.getElementById("otp").value = "";
+}
+
+function verifyOTP() {
+  const entered = document.getElementById("otp").value.trim();
+  const phone = document.getElementById("phoneNumber").value.trim();
+  if (!entered) { showToast("Enter the OTP sent to your phone", "remove"); return; }
+  if (entered !== generatedOTP) { showToast("Incorrect OTP", "remove"); return; }
+  completeLogin("User " + phone.slice(-4));
+}
+
+function completeLogin(name) {
+  isLoggedIn = true;
+  localStorage.setItem("loggedUser", name);
+  document.getElementById("authModal").style.display = "none";
+  renderLoggedInNav(name);
+  showSection("dashboard");
+  loadDashboard();
+  showToast("Welcome, " + name, "add");
+}
+
+function renderLoggedInNav(name) {
+  document.getElementById("navRight").innerHTML = `
+    <span class="user-name">Hi, ${escapeHtml(name)}</span>
+    <button class="signup-btn" style="margin-left:10px" onclick="logout()">Logout</button>`;
+  document.getElementById("navLinks").innerHTML = `
+    <li><a data-section="home" onclick="showSection('home')">Home</a></li>
+    <li><a data-section="news" onclick="showSection('news')">News</a></li>
+    <li><a data-section="dashboard" onclick="showSection('dashboard')">Dashboard</a></li>`;
+}
+
+function logout() {
+  localStorage.removeItem("loggedUser");
+  location.reload();
+}
+
+function filterStocks() {
+  const q = document.getElementById("searchInput").value.toUpperCase();
+  const dropdown = document.getElementById("dropdown");
+  dropdown.innerHTML = "";
+  if (!q) { dropdown.style.display = "none"; return; }
+  STOCKS.filter(s => s.startsWith(q) || (COMPANY_NAMES[s] || "").toUpperCase().includes(q)).forEach(s => {
+    const d = document.createElement("div");
+    d.innerText = s + " — " + (COMPANY_NAMES[s] || s);
+    d.onclick = () => selectStock(s);
+    dropdown.appendChild(d);
+  });
+  dropdown.style.display = "block";
+}
+
+function selectStock(s) {
+  selected = s;
+  document.getElementById("dropdown").style.display = "none";
+  document.getElementById("searchInput").value = s;
+  document.getElementById("stockName").innerText = (COMPANY_NAMES[s] || s) + " (" + s + ")";
+  document.getElementById("cur").innerText = "—";
+  document.getElementById("pred").innerText = "—";
+  document.getElementById("dir").innerText = "—";
+  document.getElementById("dir").className = "";
+  fetchLivePrice(s);
+
+  const favBtn = document.getElementById("favBtn");
+  if (isLoggedIn) {
+    favBtn.style.display = "block";
+    favBtn.innerText = favorites.includes(s) ? "Remove from Favorites" : "Add to Favorites";
+  } else {
+    favBtn.style.display = "none";
+  }
+}
+
+function addFavorite() {
+  if (!isLoggedIn) { openAuth("signup"); return; }
+  if (!selected) return;
+  const favBtn = document.getElementById("favBtn");
+  const index = favorites.indexOf(selected);
+  if (index === -1) {
+    favorites.push(selected);
+    favBtn.innerText = "Remove from Favorites";
+    showToast("Added to Favorites", "add");
+  } else {
+    favorites.splice(index, 1);
+    favBtn.innerText = "Add to Favorites";
+    showToast("Removed from Favorites", "remove");
+  }
+  localStorage.setItem("fav", JSON.stringify(favorites));
+  loadDashboard();
+}
+
+let dashboardGroups = { rising: [], falling: [], neutral: [] };
+
+async function loadDashboard() {
+  const favList = document.getElementById("favList");
+  closePiePopup();
+
+  if (!favorites.length) {
+    favList.innerHTML = '<p style="color:#64748b;margin-top:12px;">No favorites yet. Search a stock and add it!</p>';
+    dashboardGroups = { rising: [], falling: [], neutral: [] };
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById("pie"), {
+      type: "pie",
+      data: { labels: ["Rising", "Falling", "Neutral"], datasets: [{ data: [0, 0, 0], backgroundColor: ["#16a34a", "#dc2626", "#94a3b8"] }] },
+      options: { plugins: { legend: { labels: { color: "#0f172a" } } } }
+    });
+    return;
+  }
+
+  favList.innerHTML = '<p style="color:#64748b;">Loading live data...</p>';
+
+  const quotes = await Promise.all(favorites.map(s => fetchQuote(s)));
+  dashboardGroups = { rising: [], falling: [], neutral: [] };
+  const rowsHtml = favorites.map((s, i) => {
+    const q = quotes[i];
+    let cls, arrow, groupKey;
+    if (q.direction === "UP") { cls = "buy"; arrow = "▲"; groupKey = "rising"; }
+    else if (q.direction === "DOWN") { cls = "sell"; arrow = "▼"; groupKey = "falling"; }
+    else { cls = "watch"; arrow = "▬"; groupKey = "neutral"; }
+    dashboardGroups[groupKey].push({ symbol: s, cur: q.cur, pred: q.pred, currency: q.currency, live: q.live });
+    return `<div class="stock-row ${cls}">
+        b>${s}</b> &nbsp;|&nbsp; ${q.currency}${q.cur.toFixed(2)} → ${q.currency}${q.pred.toFixed(2)}
+        &nbsp;<span class="${cls}">${arrow}</span>${!q.live ? '<span class="data-tag">simulated</span>' : ""}
+      </div>`;
+  });
+  favList.innerHTML = rowsHtml.join("");
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("pie"), {
+    type: "pie",
+    data: {
+      labels: ["Rising", "Falling", "Neutral"],
+      datasets: [{ data: [dashboardGroups.rising.length, dashboardGroups.falling.length, dashboardGroups.neutral.length], backgroundColor: ["#16a34a", "#dc2626", "#94a3b8"] }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: "#0f172a" } } },
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        const keys = ["rising", "falling", "neutral"];
+        showGroupPopup(keys[elements[0].index]);
+      },
+      onHover: (evt, elements) => {
+        evt.native.target.style.cursor = elements.length ? "pointer" : "default";
+      }
+    }
+  });
+}
+
+function showGroupPopup(key) {
+  const labels = { rising: "Rising ▲", falling: "Falling ▼", neutral: "Neutral ▬" };
+  const list = dashboardGroups[key] || [];
+  document.getElementById("pieGroupTitle").innerText = `${labels[key]} (${list.length})`;
+  const listEl = document.getElementById("pieGroupList");
+  listEl.innerHTML = list.length
+    ? list.map(item => `
+        <div class="pie-popup-row">
+          <b>${item.symbol}</b> &nbsp;${item.currency}${item.cur.toFixed(2)} → ${item.currency}${item.pred.toFixed(2)}
+          ${!item.live ? '<span class="data-tag">simulated</span>' : ""}
+        </div>`).join("")
+    : "<p style='color:#64748b;font-size:13px;'>No stocks in this group.</p>";
+  document.getElementById("pieGroupPopup").style.display = "block";
+}
+
+function closePiePopup() {
+  const popup = document.getElementById("pieGroupPopup");
+  if (popup) popup.style.display = "none";
+}
+
+function showToast(msg, type) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = "show " + type;
+  setTimeout(() => { toast.className = ""; }, 2500);
+}
+
+const savedUser = localStorage.getItem("loggedUser");
+if (savedUser) {
+  isLoggedIn = true;
+  renderLoggedInNav(savedUser);
+}
+
+updateMarketStatus();
+setInterval(updateMarketStatus, 60000);
+
+fetchMarketNews();
+setInterval(fetchMarketNews, 300000);
+
+if (isLoggedIn) {
+  loadDashboard();
+  showSection("dashboard");
+}
+
+window.addEventListener("load", initGoogleSignIn);
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search-box")) {
+    document.getElementById("dropdown").style.display = "none";
+  }
+  if (!e.target.closest(".pie-popup") && e.target.id !== "pie") {
+    closePiePopup();
+  }
+});
+</script>
+</body>
+</html>
